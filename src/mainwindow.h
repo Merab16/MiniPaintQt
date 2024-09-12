@@ -8,7 +8,9 @@
 #include <QWidget>
 #include <QKeyEvent>
 
+
 #include <vector>
+
 
 #include "paintwidget.h"
 

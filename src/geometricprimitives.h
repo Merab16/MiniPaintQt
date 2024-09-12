@@ -63,9 +63,17 @@ public:
 
 //================Ellipse================//
 class Ellipse: public Base {
+private:
+    std::vector<QPoint> points_;
+    size_t pointCount_;
+
+private:
+    float AngleToRadian(float angle) const;
+
 public:
     Ellipse(const QPoint& start,
-             const QPoint& finish);
+            const QPoint& finish,
+            size_t pointCount = 100);
     virtual ~Ellipse();
 
     void Draw(QPainter& painter) const override;

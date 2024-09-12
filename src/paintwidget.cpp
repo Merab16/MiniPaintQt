@@ -72,9 +72,9 @@ void PaintWidget::DrawNewObject(QPainter& painter) {
         break;
 
     case GEOMETRY_OBJ::ELLIPSE:
-        //obj = new Ellipse(firstPoint_, secondPoint_);
-        //obj->Draw(painter);
-        //objects_.push_back(obj);
+        obj = new Ellipse(firstPoint_, secondPoint_);
+        obj->Draw(painter);
+        objects_.push_back(obj);
         break;
     }
 
