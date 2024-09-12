@@ -3,13 +3,19 @@
 #include <QFrame>
 #include <string>
 
+#include "geometricprimitives.h"
+
+
+using namespace GeometricPrimitives;
+
 MainWindow::MainWindow(size_t width, size_t height,
                        QWidget *parent)
     : QMainWindow(parent)
     , window_(new QWidget)
     , vBox_(new QVBoxLayout)
     , navPanel_(new QHBoxLayout)
-    , PaintArea_(new QHBoxLayout)
+    , paintHBox_(new QHBoxLayout)
+    , paintArea_(new PaintWidget(height))
 {
     // QMainWindow
     resize(width, height);
@@ -19,12 +25,20 @@ MainWindow::MainWindow(size_t width, size_t height,
     // window_
     window_->setLayout(vBox_);
 
+
     // vBox_
     vBox_->addLayout(navPanel_);
+    vBox_->addLayout(paintHBox_);
 
 
     // navPanel_
     navPanel_->setAlignment(Qt::AlignTop);
+
+    // paintHBox_
+    auto w = paintArea_->GetWidget();
+    paintHBox_->addWidget(w);
+
+
 
 
 
@@ -32,10 +46,12 @@ MainWindow::MainWindow(size_t width, size_t height,
 
 
 
-
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+    deleteLater();
+
+}
 
 
 // private
@@ -60,6 +76,22 @@ void MainWindow::NavigationInitialization() {
             navButtons_.push_back(std::move(btn));
             navPanel_->addWidget(navButtons_.back());
         }
+    }
+
+    connect(navButtons_[0], &QPushButton::clicked, [this](){
+        qDebug() << "Clicked";
+        paintArea_->SetCurrentObject(GEOMETRY_OBJ::RECTANGLE);
+    });
+
+
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event) {
+    switch(event->key()) {
+    case Qt::Key_Escape:
+        if (paintArea_->GetIsDrawing())
+            paintArea_->CancelDrawing();
+        break;
     }
 }
 

@@ -6,7 +6,11 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QKeyEvent>
+
 #include <vector>
+
+#include "paintwidget.h"
 
 class MainWindow : public QMainWindow
 {
@@ -17,14 +21,15 @@ private:
 
     QVBoxLayout* vBox_;
     QHBoxLayout* navPanel_;
-    QHBoxLayout* PaintArea_;
+    QHBoxLayout* paintHBox_;
+    PaintWidget* paintArea_;
 
     std::vector<QPushButton*> navButtons_;
 
-
 private:
-    void NavigationInitialization();
+    void keyPressEvent(QKeyEvent* event) override;
 
+    void NavigationInitialization();
 
 
 public:
