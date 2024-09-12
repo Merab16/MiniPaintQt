@@ -35,6 +35,7 @@ void PaintWidget::mousePressEvent(QMouseEvent* event) {
 
     case Qt::RightButton:
         isDrawing_= false;
+        SetCurrentObject(GEOMETRY_OBJ::NONE);
         break;
     }
 
@@ -56,7 +57,6 @@ void PaintWidget::mouseReleaseEvent(QMouseEvent* event) {
 
 void PaintWidget::DrawNewObject(QPainter& painter) {
     Base* obj;
-
     switch(currentObj_) {
     case GEOMETRY_OBJ::RECTANGLE:
         obj = new Rectangle(firstPoint_, secondPoint_);
@@ -66,11 +66,15 @@ void PaintWidget::DrawNewObject(QPainter& painter) {
         break;
 
     case GEOMETRY_OBJ::TRIANGLE:
-
+        obj = new Triangle(firstPoint_, secondPoint_);
+        obj->Draw(painter);
+        objects_.push_back(obj);
         break;
 
     case GEOMETRY_OBJ::ELLIPSE:
-
+        //obj = new Ellipse(firstPoint_, secondPoint_);
+        //obj->Draw(painter);
+        //objects_.push_back(obj);
         break;
     }
 

@@ -35,12 +35,6 @@ public:
 };
 
 
-//================Triangle================//
-class Triangle: public Base {
-
-
-};
-
 //================Rectangle================//
 class Rectangle: public Base {
 public:
@@ -53,9 +47,28 @@ public:
 
 };
 
+
+//================Triangle================//
+class Triangle: public Base {
+public:
+    Triangle(const QPoint& start,
+              const QPoint& finish);
+    virtual ~Triangle();
+
+    void Draw(QPainter& painter) const override;
+
+};
+
+
+
 //================Ellipse================//
 class Ellipse: public Base {
+public:
+    Ellipse(const QPoint& start,
+             const QPoint& finish);
+    virtual ~Ellipse();
 
+    void Draw(QPainter& painter) const override;
 
 };
 

@@ -6,6 +6,11 @@
 #include "geometricprimitives.h"
 
 
+struct ButtonInfo {
+    std::string name;
+    std::function<void()> pfunc;
+};
+
 using namespace GeometricPrimitives;
 
 MainWindow::MainWindow(size_t width, size_t height,
@@ -56,16 +61,23 @@ MainWindow::~MainWindow() {
 
 // private
 void MainWindow::NavigationInitialization() {
-    std::vector<std::string> buttons_names{
-        "Прямоугольник", "Треугольник", "Эллипс", "|",
-        "Связь", "|",
-        "Переместить", "Удалить", "|",
-        "Загрузить", "Сохранить"
+    std::vector<ButtonInfo> btns {
+        {"Прямоугольник",   [this](){ paintArea_->SetCurrentObject(GEOMETRY_OBJ::RECTANGLE);}},
+        {"Треугольник",     [this](){ paintArea_->SetCurrentObject(GEOMETRY_OBJ::TRIANGLE);}},
+        {"Эллипс",          [this](){ paintArea_->SetCurrentObject(GEOMETRY_OBJ::ELLIPSE);}},
+        {"|",               std::function<void()>()},
+        {"Связь",           std::function<void()>()},
+        {"|",               std::function<void()>()},
+        {"Переместить",     std::function<void()>()},
+        {"Удалить",         std::function<void()>()},
+        {"|",               std::function<void()>()},
+        {"Загрузить",       std::function<void()>()},
+        {"Сохранить",       std::function<void()>()},
     };
 
     navButtons_.reserve(8);
 
-    for (const auto& name: buttons_names) {
+    for (const auto& [name, func]: btns) {
         if (name == "|") {
             QFrame *vline = new QFrame();
             vline->setFrameShape(QFrame::VLine);
@@ -75,13 +87,11 @@ void MainWindow::NavigationInitialization() {
             QPushButton* btn = new QPushButton(name.c_str());
             navButtons_.push_back(std::move(btn));
             navPanel_->addWidget(navButtons_.back());
+            connect(btn, &QPushButton::clicked, func);
         }
     }
 
-    connect(navButtons_[0], &QPushButton::clicked, [this](){
-        qDebug() << "Clicked";
-        paintArea_->SetCurrentObject(GEOMETRY_OBJ::RECTANGLE);
-    });
+
 
 
 }
@@ -89,8 +99,10 @@ void MainWindow::NavigationInitialization() {
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     switch(event->key()) {
     case Qt::Key_Escape:
-        if (paintArea_->GetIsDrawing())
+        if (paintArea_->GetIsDrawing()) {
+            paintArea_->SetCurrentObject(GEOMETRY_OBJ::NONE);
             paintArea_->CancelDrawing();
+        }
         break;
     }
 }
