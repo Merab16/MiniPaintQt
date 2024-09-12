@@ -28,11 +28,14 @@ private:
 
     std::vector<QPushButton*> navButtons_;
 
+    bool needDelete_ = false;
+
 private:
     void keyPressEvent(QKeyEvent* event) override;
 
     void NavigationInitialization();
 
+    void DeleteObject();
 
 public:
     MainWindow(size_t width, size_t height,

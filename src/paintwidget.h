@@ -41,7 +41,12 @@ public:
     QWidget* GetWidget() {return this; }
 
     void paintEvent(QPaintEvent *event) override;
-    void CancelDrawing() {isDrawing_= false; }
+
+
+
+    void CancelDrawing() { isDrawing_= false; }
+    void DeleteObject(const QPoint& point);
+    //void Link();
 
 
     // getters

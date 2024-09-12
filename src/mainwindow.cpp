@@ -1,7 +1,9 @@
 #include "mainwindow.h"
 
 #include <QFrame>
+#include <QDebug>
 #include <string>
+
 
 #include "geometricprimitives.h"
 
@@ -69,7 +71,7 @@ void MainWindow::NavigationInitialization() {
         {"Связь",           std::function<void()>()},
         {"|",               std::function<void()>()},
         {"Переместить",     std::function<void()>()},
-        {"Удалить",         std::function<void()>()},
+        {"Удалить",         [this](){ }},
         {"|",               std::function<void()>()},
         {"Загрузить",       std::function<void()>()},
         {"Сохранить",       std::function<void()>()},
@@ -91,10 +93,8 @@ void MainWindow::NavigationInitialization() {
         }
     }
 
-
-
-
 }
+
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     switch(event->key()) {

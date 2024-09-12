@@ -18,9 +18,16 @@ enum class GEOMETRY_OBJ {
 
 //================Base================//
 class Base {
-public:
+protected:
+    std::vector<QPoint> points_;
     QPoint startPos_;
     QPoint finishPos_;
+
+
+private:
+    bool Cross(const QPoint& p1, const QPoint& p2, const QPoint& p) const;
+
+
 
 
 public:
@@ -29,8 +36,8 @@ public:
     virtual ~Base();
 
 
-    virtual void Draw(QPainter& painter) const = 0;
-
+    virtual void Draw(QPainter& painter) const;
+    bool IsPointInside(const QPoint& point) const;
 
 };
 
@@ -41,8 +48,6 @@ public:
     Rectangle(const QPoint& start,
               const QPoint& finish);
     virtual ~Rectangle();
-
-    void Draw(QPainter& painter) const override;
 
 
 };
@@ -55,7 +60,7 @@ public:
               const QPoint& finish);
     virtual ~Triangle();
 
-    void Draw(QPainter& painter) const override;
+
 
 };
 
@@ -64,7 +69,6 @@ public:
 //================Ellipse================//
 class Ellipse: public Base {
 private:
-    std::vector<QPoint> points_;
     size_t pointCount_;
 
 private:
@@ -76,7 +80,7 @@ public:
             size_t pointCount = 100);
     virtual ~Ellipse();
 
-    void Draw(QPainter& painter) const override;
+
 
 };
 

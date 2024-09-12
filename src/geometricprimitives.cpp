@@ -19,6 +19,45 @@ Base::~Base() {
     qDebug() << "Base deleted";
 }
 
+// private
+bool Base::Cross(const QPoint& p1, const QPoint& p2, const QPoint& p) const {
+
+    if (p1.y() > p.y() && p2.y() > p.y()) return false;
+    if (p1.y() < p.y() && p2.y() < p.y()) return false;
+    if (p1.x() < p.x() && p2.x() < p.x()) return false;
+
+    double intersectionX = p1.x() + (p.y() - p1.y()) * (p2.x() - p1.x()) / (p2.y() - p1.y());
+    return intersectionX >= p.x();
+}
+
+
+
+// public
+void Base::Draw(QPainter& painter) const {
+    for (int i = 1; i < points_.size(); ++i) {
+        painter.drawLine(points_[i], points_[i - 1]);
+    }
+    painter.drawLine(points_.back(), points_[0]);
+}
+
+bool Base::IsPointInside(const QPoint& point) const {
+    // переделать так, чтобы от точки строился луч вправо, и искались пересечения, среди всех ребер
+    // четное кол-во - находится снаружи
+    // нечетное - внутри
+
+    size_t intersections = 0;
+    for (size_t i = 0; i < points_.size(); i++) {
+        QPoint p1 = points_[i];
+        QPoint p2 = points_[(i + 1) % points_.size()];
+
+        if (Cross(p1, p2, point)) {
+            intersections++;
+        }
+    }
+    return intersections % 2 == 1;
+
+
+}
 
 //================Rectangle================//
 Rectangle::Rectangle(const QPoint& start,
@@ -26,7 +65,11 @@ Rectangle::Rectangle(const QPoint& start,
     : Base(start, finish)
 {
     qDebug() << "Rectangle created";
-
+    points_.reserve(4);
+    points_.push_back({startPos_.x(), startPos_.y()});
+    points_.push_back({finishPos_.x(), startPos_.y()});
+    points_.push_back({finishPos_.x(), finishPos_.y()});
+    points_.push_back({startPos_.x(), finishPos_.y()});
 
 }
 
@@ -35,16 +78,7 @@ Rectangle::~Rectangle() {
 }
 
 // public
-void Rectangle::Draw(QPainter& painter) const {
-    painter.drawLine(startPos_.x(), startPos_.y(),
-                     finishPos_.x(), startPos_.y());
-    painter.drawLine(finishPos_.x(), startPos_.y(),
-                     finishPos_.x(), finishPos_.y());
-    painter.drawLine(finishPos_.x(), finishPos_.y(),
-                     startPos_.x(), finishPos_.y());
-    painter.drawLine(startPos_.x(), finishPos_.y(),
-                     startPos_.x(), startPos_.y());
-}
+
 
 
 //================Triangle================//
@@ -53,6 +87,15 @@ Triangle::Triangle(const QPoint& start,
     : Base(start, finish)
 {
     qDebug() << "Triangle created";
+    points_.reserve(3);
+
+    points_.push_back({startPos_.x(), finishPos_.y()});
+    points_.push_back({finishPos_.x(), finishPos_.y()});
+    points_.push_back({startPos_.x() + (finishPos_.x() - startPos_.x()) / 2, startPos_.y()});
+
+
+
+
 }
 
 Triangle::~Triangle() {
@@ -60,14 +103,7 @@ Triangle::~Triangle() {
 }
 
 // public
-void Triangle::Draw(QPainter& painter) const {
-    painter.drawLine(startPos_.x(), finishPos_.y(),
-                     startPos_.x() + (finishPos_.x() - startPos_.x()) / 2, startPos_.y());
-    painter.drawLine(startPos_.x() + (finishPos_.x() - startPos_.x()) / 2, startPos_.y(),
-                     finishPos_.x(), finishPos_.y());
-    painter.drawLine(finishPos_.x(), finishPos_.y(),
-                     startPos_.x(), finishPos_.y());
-}
+
 
 
 //================Ellipse================//
@@ -107,13 +143,6 @@ float Ellipse::AngleToRadian(float angle) const {
 
 
 // public
-void Ellipse::Draw(QPainter& painter) const {
-    for (int i = 1; i < points_.size(); ++i) {
-        painter.drawLine(points_[i], points_[i - 1]);
-    }
-    painter.drawLine(points_.back(), points_[0]);
-}
-
 
 
 

@@ -31,6 +31,14 @@ void PaintWidget::mousePressEvent(QMouseEvent* event) {
     case Qt::LeftButton:
         firstPoint_ = QPoint{event->pos()};
         isDrawing_ = true;
+
+        for (const auto& obj: objects_) {
+            if (obj->IsPointInside(firstPoint_)) {
+                qDebug() << "Inside";
+            }
+        }
+
+
         break;
 
     case Qt::RightButton:
@@ -97,4 +105,16 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
         DrawNewObject(painter);
     }
     painter.end();
+}
+
+void PaintWidget::DeleteObject(const QPoint& point) {
+    size_t i = 0;
+    for (; i < objects_.size(); ++i) {
+        if (objects_[i]->IsPointInside(point)) {
+            break;
+        }
+    }
+
+    objects_.erase(objects_.begin() + i);
+
 }
