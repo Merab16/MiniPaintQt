@@ -12,11 +12,19 @@
 
 #include "geometricprimitives.h"
 
+bool operator< (const QPoint& lhs, const QPoint& rhs);
 
+struct LoadObj;
 
 class PaintWidget : public QWidget
 {
     struct Link {
+        bool operator< (const Link& rhs) const {
+            if (*p1 == *rhs.p1)
+                return *p2 < *rhs.p2;
+            return *p1 < *rhs.p1;
+        }
+
 
         Link() = default;
         Link(QPoint* point1, QPoint* point2) {
@@ -70,7 +78,6 @@ private:
     QPoint current_mouse_pos {0, 0};
 
     std::set<GeometricPrimitives::Base*> objects_;
-    std::vector<Link> links_;
 
     // bool vars
     bool isDrawing_ = false;
@@ -108,13 +115,14 @@ private:
     void StartLink();
     void StartMove();
     void StartDelete();
-    void DeleteLinks(GeometricPrimitives::Base* obj);
+    void ConvertObj(const std::set<LoadObj>& vec);
 
 public:
     explicit PaintWidget(size_t height, QWidget *parent = nullptr);
     ~PaintWidget();
 
-
+    void SaveCanvas() const;
+    void LoadCanvas();
 
     // getters
     QWidget* GetWidget() {return this; }

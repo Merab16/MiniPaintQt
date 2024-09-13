@@ -11,9 +11,14 @@ namespace GeometricPrimitives {
 
 
 //================Base================//
+size_t Base::INDEX = 0;
+
 Base::Base(const QPoint& start,
-           const QPoint& finish)
-    : startPos_(start)
+           const QPoint& finish,
+           GEOMETRY_OBJ type)
+    : type_(type)
+    , index_(INDEX++)
+    , startPos_(start)
     , finishPos_(finish)
     , centre_(start.x() + (finish.x() - start.x()) / 2, start.y() + (finish.y() - start.y()) / 2)
 {
@@ -22,6 +27,12 @@ Base::Base(const QPoint& start,
 
 Base::~Base() {
     qDebug() << "Base deleted";
+
+    for (auto& link: links_) {
+        link->links_.erase(this);
+    }
+
+
 }
 
 // private
@@ -77,12 +88,41 @@ void Base::Move(const QPoint& move_offset) {
 
 }
 
+void Base::AddLink(Base* obj) {
+    links_.emplace(obj);
+    objToIndex_.emplace(obj, obj->index_);
+}
 
+void Base::Save(std::ofstream& fout) const {
+
+    // type
+    fout << (int)type_;
+
+    //fout << "index\n";
+    fout << '\n';
+    fout << index_;
+
+    fout << '\n';
+    //fout << "startPos\n";
+    fout << startPos_.x() << ' ' << startPos_.y();
+
+    fout << '\n';
+    //fout << "finishPos\n";
+    fout << finishPos_.x() << ' ' << finishPos_.y();
+
+    fout << '\n';
+    //fout << "links\n";
+    fout << objToIndex_.size() << ' ';
+    for (const auto& [obj, index]: objToIndex_) {
+        fout << index << ' ';
+    }
+    fout << std::endl;
+}
 
 //================Rectangle================//
 Rectangle::Rectangle(const QPoint& start,
                      const QPoint& finish)
-    : Base(start, finish)
+    : Base(start, finish, GEOMETRY_OBJ::RECTANGLE)
 {
     qDebug() << "Rectangle created";
     points_.reserve(4);
@@ -103,7 +143,7 @@ Rectangle::~Rectangle() {
 //================Triangle================//
 Triangle::Triangle(const QPoint& start,
                      const QPoint& finish)
-    : Base(start, finish)
+    : Base(start, finish, GEOMETRY_OBJ::TRIANGLE)
 {
     qDebug() << "Triangle created";
     points_.reserve(3);
@@ -124,7 +164,7 @@ Triangle::~Triangle() {
 Ellipse::Ellipse(const QPoint& start,
                  const QPoint& finish,
                  size_t pointCount)
-    : Base(start, finish)
+    : Base(start, finish, GEOMETRY_OBJ::ELLIPSE)
     , pointCount_(pointCount)
 {
     qDebug() << "Ellipse created";

@@ -1,9 +1,30 @@
 #include "paintwidget.h"
 
+#include <fstream>
 #include <string>
 
-
 using namespace GeometricPrimitives;
+
+bool operator< (const QPoint& lhs, const QPoint& rhs) {
+    if (lhs.x() == rhs.x())
+        return lhs.y() < rhs.y();
+    return lhs.x() < rhs.x();
+}
+
+struct LoadObj {
+    bool operator< (const LoadObj& rhs) const {
+        return index < rhs.index;
+    }
+
+
+    GEOMETRY_OBJ type;
+    size_t index;
+    QPoint startPos;
+    QPoint finishPos;
+    size_t links_size;
+    std::vector<size_t> links;
+};
+
 
 PaintWidget::PaintWidget(size_t height, QWidget *parent)
     : QWidget{parent}
@@ -84,6 +105,38 @@ void PaintWidget::mouseMoveEvent(QMouseEvent* event)  {
     update();
 }
 
+void PaintWidget::paintEvent(QPaintEvent *event) {
+    QPainter painter(this);
+
+    potential_link_.Draw(painter);
+
+    // init exist links between two objs
+    std::set<Link> links;
+    for (const auto& obj: objects_) {
+        for (const auto& other_obj: obj->GetLinks()) {
+            links.emplace(&obj->GetCentre(), &other_obj->GetCentre());
+        }
+    }
+
+    // drawing links
+    for (const auto& l: links) {
+        l.Draw(painter);
+    }
+
+    // drawing exist objects
+    for (const auto& obj: objects_) {
+        obj->Draw(painter);
+    }
+
+
+    // drawing new object
+    if (needUpdate_) {
+        DrawNewObject(painter);
+    }
+    painter.end();
+}
+
+
 void PaintWidget::DrawNewObject(QPainter& painter) {
     Base* obj;
     switch(currentObj_) {
@@ -137,8 +190,11 @@ void PaintWidget::StartLink() {
             CancelLink();
             return;
         }
-        potential_link_.p2 = &obj->GetCentre();
-        links_.push_back(std::move(potential_link_));
+        potential_link_.Reset();
+
+        potential_link_obj_->AddLink(obj);
+        obj->AddLink(potential_link_obj_);
+
         link_ = false;
     }
 
@@ -170,53 +226,113 @@ void PaintWidget::StartDelete() {
     auto obj = CheckIntersection();
     if (!obj) return;
 
-    DeleteLinks(obj);
-    delete obj;
     objects_.erase(obj);
+    delete obj;
 
     delete_ = false;
 }
 
-void PaintWidget::DeleteLinks(Base* obj) {
-    std::vector<size_t> indexs;
-    for (size_t i = 0; i < links_.size(); ++i) {
-        if (links_[i].p1 == &obj->GetCentre() ||
-            links_[i].p2 == &obj->GetCentre())
-            indexs.push_back(i);
+void PaintWidget::ConvertObj(const std::set<LoadObj>& vec) {
+    // tmp_objs необходим, для хранение объектов без связей
+    // связи будут инициализироваться после создания всех объектов
+    std::vector<Base*> tmp_objs;
+    tmp_objs.reserve(vec.size());
+    for (const auto& el: vec) {
+        Base* obj;
+        if (el.type == GEOMETRY_OBJ::RECTANGLE) {
+            obj = new Rectangle(el.startPos, el.finishPos);
+        } else if (el.type == GEOMETRY_OBJ::TRIANGLE) {
+            obj = new Triangle(el.startPos, el.finishPos);
+        } else if (el.type == GEOMETRY_OBJ::ELLIPSE) {
+            obj = new Ellipse(el.startPos, el.finishPos);
+        }
+
+        tmp_objs.push_back(obj);
     }
 
-    for (const auto& index: indexs) {
-        links_.erase(links_.begin() + index);
+    for (size_t i = 0; i < tmp_objs.size(); ++i) {
+        LoadObj lo;
+        lo.index = i;
+        auto it = vec.find(lo);
+        for (const auto& el: it->links) {
+            tmp_objs[i]->AddLink(tmp_objs[el]);
+        }
     }
+
+    for (auto& obj: tmp_objs) {
+        objects_.emplace(std::move(obj));
+    }
+    update();
 }
+
 
 
 // public
-void PaintWidget::paintEvent(QPaintEvent *event) {
-    QPainter painter(this);
+void PaintWidget::SaveCanvas() const {
+    std::ofstream fout("Canvas.txt");
 
 
-    potential_link_.Draw(painter);
-
-
-    // drawing links_
-    for (const auto& l: links_) {
-        l.Draw(painter);
-    }
-
-    // drawing exist objects
     for (const auto& obj: objects_) {
-        obj->Draw(painter);
+        obj->Save(fout);
     }
 
 
-    // drawing new object
-    if (needUpdate_) {
-        DrawNewObject(painter);
-    }
-    painter.end();
+    fout.close();
 }
 
+
+void PaintWidget::LoadCanvas() {
+    std::ifstream fin("Canvas.txt");
+
+    if (!fin.is_open()) {
+        qDebug() << "Can't open file" << " Canvas.txt";
+        return ;
+    }
+
+    if (fin.peek() == std::ifstream::traits_type::eof()) {
+        qDebug() << "File empty";
+        fin.close();
+        return ;
+    }
+
+
+    size_t max_index = 0;
+    int p1, p2;
+
+    std::set<LoadObj> tmp_objs;
+    LoadObj tmp;
+
+
+    std::string str;
+    while (!fin.eof()) {
+        int itype;;
+        fin >> itype;
+        tmp.type = (GEOMETRY_OBJ)itype;
+
+        fin >> tmp.index;
+        max_index = std::max(max_index, tmp.index);
+
+        fin >> p1 >> p2;
+        tmp.startPos = QPoint{p1, p2};
+
+        fin >> p1 >> p2;
+        tmp.finishPos = QPoint{p1, p2};
+
+        fin >> tmp.links_size;
+        tmp.links.reserve(tmp.links_size);
+        for (size_t i = 0; i < tmp.links_size; ++i) {
+            fin >> p1;
+            tmp.links.push_back(p1);
+        }
+
+        tmp_objs.emplace(tmp);
+    }
+
+    fin.close();
+
+    ConvertObj(tmp_objs);
+
+}
 
 
 // setters

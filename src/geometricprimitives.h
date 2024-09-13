@@ -4,7 +4,9 @@
 #include <QPoint>
 #include <QPainter>
 
-#include <vector>
+#include <set>
+#include <fstream>
+#include <map>
 
 
 namespace GeometricPrimitives {
@@ -20,10 +22,17 @@ enum class GEOMETRY_OBJ {
 //================Base================//
 class Base {
 protected:
+    static size_t INDEX;
+    GEOMETRY_OBJ type_;
+    size_t index_;
     std::vector<QPoint> points_;
     QPoint startPos_;
     QPoint finishPos_;
     QPoint centre_;
+
+
+    std::set<Base*> links_;
+    std::map<Base*, size_t> objToIndex_;
 
 private:
     bool Cross(const QPoint& p1, const QPoint& p2,
@@ -32,16 +41,23 @@ private:
 
 public:
     Base(const QPoint& start,
-         const QPoint& finish);
-    ~Base();
+         const QPoint& finish,
+         GEOMETRY_OBJ type);
+    virtual ~Base();
 
 
     void Draw(QPainter& painter) const;
     bool IsPointInside(const QPoint& point) const;
     void Move(const QPoint& move_offset);
+    void AddLink(Base* obj);
+
+    void Save(std::ofstream& fout) const;
+    void Load();
+
 
     // getters
     QPoint& GetCentre() { return centre_; }
+    const std::set<Base*>& GetLinks() const {return links_;}
 };
 
 
@@ -50,8 +66,7 @@ class Rectangle: public Base {
 public:
     Rectangle(const QPoint& start,
               const QPoint& finish);
-    ~Rectangle();
-
+    virtual ~Rectangle();
 
 };
 
@@ -61,7 +76,7 @@ class Triangle: public Base {
 public:
     Triangle(const QPoint& start,
               const QPoint& finish);
-    ~Triangle();
+    virtual ~Triangle();
 
 };
 
@@ -79,7 +94,7 @@ public:
     Ellipse(const QPoint& start,
             const QPoint& finish,
             size_t pointCount = 50);
-    ~Ellipse();
+    virtual ~Ellipse();
 
 };
 

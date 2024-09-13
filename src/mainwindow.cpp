@@ -73,8 +73,8 @@ void MainWindow::NavigationInitialization() {
         {"Переместить",     [this](){ paintArea_->MoveObjects(); }},
         {"Удалить",         [this](){ paintArea_->DeleteObject(); }},
         {"|",               std::function<void()>()},
-        {"Загрузить",       std::function<void()>()},
-        {"Сохранить",       std::function<void()>()},
+        {"Загрузить",       [this](){ paintArea_->LoadCanvas(); }},
+        {"Сохранить",       [this](){ paintArea_->SaveCanvas(); }},
     };
 
     navButtons_.reserve(8);
