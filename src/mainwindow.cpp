@@ -68,7 +68,7 @@ void MainWindow::NavigationInitialization() {
         {"Треугольник",     [this](){ paintArea_->SetCurrentObject(GEOMETRY_OBJ::TRIANGLE);}},
         {"Эллипс",          [this](){ paintArea_->SetCurrentObject(GEOMETRY_OBJ::ELLIPSE);}},
         {"|",               std::function<void()>()},
-        {"Связь",           std::function<void()>()},
+        {"Связь",           [this](){ paintArea_->LinkObjects(); }},
         {"|",               std::function<void()>()},
         {"Переместить",     std::function<void()>()},
         {"Удалить",         [this](){ }},
@@ -103,6 +103,8 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             paintArea_->SetCurrentObject(GEOMETRY_OBJ::NONE);
             paintArea_->CancelDrawing();
         }
+        paintArea_->CancelLink();
+
         break;
     }
 }

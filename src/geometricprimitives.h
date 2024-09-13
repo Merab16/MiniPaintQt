@@ -22,10 +22,12 @@ protected:
     std::vector<QPoint> points_;
     QPoint startPos_;
     QPoint finishPos_;
+    QPoint centre_;
 
 
 private:
-    bool Cross(const QPoint& p1, const QPoint& p2, const QPoint& p) const;
+    bool Cross(const QPoint& p1, const QPoint& p2,
+               const QPoint& p) const;
 
 
 
@@ -39,6 +41,8 @@ public:
     virtual void Draw(QPainter& painter) const;
     bool IsPointInside(const QPoint& point) const;
 
+    // getters
+    QPoint& GetCentre() { return centre_; }
 };
 
 

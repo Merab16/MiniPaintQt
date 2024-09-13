@@ -11,6 +11,7 @@ Base::Base(const QPoint& start,
            const QPoint& finish)
     : startPos_(start)
     , finishPos_(finish)
+    , centre_(start.x() + (finish.x() - start.x()) / 2, start.y() + (finish.y() - start.y()) / 2)
 {
     qDebug() << "Base created";
 }

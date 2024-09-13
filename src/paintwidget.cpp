@@ -8,7 +8,7 @@ using namespace GeometricPrimitives;
 PaintWidget::PaintWidget(size_t height, QWidget *parent)
     : QWidget{parent}
 {
-
+    setMouseTracking(true);
     std::string styleSheet =
         "background-color: red;";
     setStyleSheet(styleSheet.c_str());
@@ -32,17 +32,14 @@ void PaintWidget::mousePressEvent(QMouseEvent* event) {
         firstPoint_ = QPoint{event->pos()};
         isDrawing_ = true;
 
-        for (const auto& obj: objects_) {
-            if (obj->IsPointInside(firstPoint_)) {
-                qDebug() << "Inside";
-            }
-        }
-
+        if (link_)
+            CheckIntersection();
 
         break;
 
     case Qt::RightButton:
         isDrawing_= false;
+        CancelLink();
         SetCurrentObject(GEOMETRY_OBJ::NONE);
         break;
     }
@@ -61,6 +58,11 @@ void PaintWidget::mouseReleaseEvent(QMouseEvent* event) {
         }
         break;
     }
+}
+
+void PaintWidget::mouseMoveEvent(QMouseEvent* event)  {
+    current_mouse_pos = event->pos();
+    update();
 }
 
 void PaintWidget::DrawNewObject(QPainter& painter) {
@@ -90,15 +92,49 @@ void PaintWidget::DrawNewObject(QPainter& painter) {
     currentObj_ = GEOMETRY_OBJ::NONE;
 }
 
+void PaintWidget::CheckIntersection() {
+    bool inters = false;
+    for (const auto& obj: objects_) {
+        if (obj->IsPointInside(firstPoint_)) {
+            if (!potential_link_.sHalf)
+                potential_link_ = Link{&obj->GetCentre(), &current_mouse_pos};
+            else {
+                if (potential_link_.p1 == &obj->GetCentre()) {
+                    CancelLink();
+                    return;
+                }
+                potential_link_.p2 = &obj->GetCentre();
+                links_.push_back(std::move(potential_link_));
+                link_ = false;
+            }
+            inters = true;
+        }
+    }
+
+    if (!inters) {
+        CancelLink();
+    }
+}
 
 // public
 void PaintWidget::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
 
+
+    potential_link_.Draw(painter);
+
+
+    // drawing links_
+    for (const auto& l: links_) {
+        l.Draw(painter);
+    }
+
     // drawing exist objects
     for (const auto& obj: objects_) {
         obj->Draw(painter);
     }
+
+
 
     // drawing new object
     if (needUpdate_) {
@@ -116,5 +152,15 @@ void PaintWidget::DeleteObject(const QPoint& point) {
     }
 
     objects_.erase(objects_.begin() + i);
-
 }
+
+// setters
+void PaintWidget::CancelLink() {
+    qDebug() << "Cancel link";
+    link_ = false;
+    potential_link_.Reset();
+    update();
+}
+
+
+
