@@ -4,6 +4,7 @@
 #include <QPoint>
 #include <QPainter>
 
+#include <vector>
 
 
 namespace GeometricPrimitives {
@@ -24,22 +25,20 @@ protected:
     QPoint finishPos_;
     QPoint centre_;
 
-
 private:
     bool Cross(const QPoint& p1, const QPoint& p2,
                const QPoint& p) const;
 
 
-
-
 public:
     Base(const QPoint& start,
          const QPoint& finish);
-    virtual ~Base();
+    ~Base();
 
 
-    virtual void Draw(QPainter& painter) const;
+    void Draw(QPainter& painter) const;
     bool IsPointInside(const QPoint& point) const;
+    void Move(const QPoint& move_offset);
 
     // getters
     QPoint& GetCentre() { return centre_; }
@@ -51,7 +50,7 @@ class Rectangle: public Base {
 public:
     Rectangle(const QPoint& start,
               const QPoint& finish);
-    virtual ~Rectangle();
+    ~Rectangle();
 
 
 };
@@ -62,9 +61,7 @@ class Triangle: public Base {
 public:
     Triangle(const QPoint& start,
               const QPoint& finish);
-    virtual ~Triangle();
-
-
+    ~Triangle();
 
 };
 
@@ -81,10 +78,8 @@ private:
 public:
     Ellipse(const QPoint& start,
             const QPoint& finish,
-            size_t pointCount = 100);
-    virtual ~Ellipse();
-
-
+            size_t pointCount = 50);
+    ~Ellipse();
 
 };
 

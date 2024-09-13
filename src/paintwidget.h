@@ -7,6 +7,8 @@
 #include <QMouseEvent>
 
 #include <vector>
+#include <set>
+
 
 #include "geometricprimitives.h"
 
@@ -23,6 +25,8 @@ class PaintWidget : public QWidget
             sHalf = true;
         }
 
+        ~Link() {}
+
         Link(const Link&) = delete;
         Link& operator=(const Link&) = delete;
 
@@ -34,9 +38,6 @@ class PaintWidget : public QWidget
             rhs.Reset();
         }
         Link& operator=(Link&& rhs) {
-            // delete p1;
-            // delete p2;
-
             p1 = rhs.p1;
             p2 = rhs.p2;
             sHalf = rhs.sHalf;
@@ -45,70 +46,90 @@ class PaintWidget : public QWidget
             return *this;
         }
 
-
         void Draw(QPainter& painter) const {
             if (p1 && p2)
                 painter.drawLine(*p1, *p2);
         }
 
-        void Reset() {p1 = nullptr; p2 = nullptr; sHalf = false;}
+        void Reset() {
+            p1 = nullptr;
+            p2 = nullptr;
+            sHalf = false;
+        }
 
         QPoint* p1 = nullptr;
         QPoint* p2 = nullptr;
         bool sHalf = false;
+
     };
+
 
     Q_OBJECT
 private:
-    QPoint firstPoint_;
-    QPoint secondPoint_;
+    // general vars
+    QPoint current_mouse_pos {0, 0};
 
+    std::set<GeometricPrimitives::Base*> objects_;
+    std::vector<Link> links_;
+
+    // bool vars
     bool isDrawing_ = false;
     bool needUpdate_ = false;
     bool link_ = false;
+    bool move_ = false;
+    bool delete_ = false;
 
-    QPoint current_mouse_pos{0, 0};
-
+    // vars of new obj
+    QPoint firstPoint_;
+    QPoint secondPoint_;
     GeometricPrimitives::GEOMETRY_OBJ currentObj_ =
         GeometricPrimitives::GEOMETRY_OBJ::NONE;
 
-    std::vector<GeometricPrimitives::Base*> objects_;
+    // vars of linking obj
     Link potential_link_;
-    std::vector<Link> links_;
+    GeometricPrimitives::Base* potential_link_obj_ = nullptr;
+
+    // vars of moving obj
+    QPoint start_move_pos_;
+    GeometricPrimitives::Base* current_move_obj_ = nullptr;
+
 private:
+    // override events
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void paintEvent(QPaintEvent *event) override;
+
 
     void DrawNewObject(QPainter& painter);
-    void CheckIntersection();
+    GeometricPrimitives::Base* CheckIntersection();
+
+
+    void StartLink();
+    void StartMove();
+    void StartDelete();
+    void DeleteLinks(GeometricPrimitives::Base* obj);
 
 public:
     explicit PaintWidget(size_t height, QWidget *parent = nullptr);
     ~PaintWidget();
 
 
-    QWidget* GetWidget() {return this; }
-
-    void paintEvent(QPaintEvent *event) override;
-
-
-
-
-    void DeleteObject(const QPoint& point);
-    //void Link();
-
 
     // getters
+    QWidget* GetWidget() {return this; }
     bool GetIsDrawing() const {return isDrawing_; }
+
 
     // setters
     void CancelDrawing() { isDrawing_= false; }
     void SetCurrentObject(GeometricPrimitives::GEOMETRY_OBJ type)
-        {currentObj_ = type; }
+        { currentObj_ = type; link_ = move_ = delete_ = false; }
     void LinkObjects() { link_ = true; }
     void CancelLink();
-
+    void MoveObjects() { move_ = true; }
+    void CancelMove();
+    void DeleteObject() { delete_ = true; }
 
 
 signals:

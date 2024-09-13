@@ -70,8 +70,8 @@ void MainWindow::NavigationInitialization() {
         {"|",               std::function<void()>()},
         {"Связь",           [this](){ paintArea_->LinkObjects(); }},
         {"|",               std::function<void()>()},
-        {"Переместить",     std::function<void()>()},
-        {"Удалить",         [this](){ }},
+        {"Переместить",     [this](){ paintArea_->MoveObjects(); }},
+        {"Удалить",         [this](){ paintArea_->DeleteObject(); }},
         {"|",               std::function<void()>()},
         {"Загрузить",       std::function<void()>()},
         {"Сохранить",       std::function<void()>()},
@@ -104,6 +104,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             paintArea_->CancelDrawing();
         }
         paintArea_->CancelLink();
+        paintArea_->CancelMove();
 
         break;
     }

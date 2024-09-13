@@ -6,6 +6,10 @@
 
 
 namespace GeometricPrimitives {
+
+
+
+
 //================Base================//
 Base::Base(const QPoint& start,
            const QPoint& finish)
@@ -21,8 +25,7 @@ Base::~Base() {
 }
 
 // private
-bool Base::Cross(const QPoint& p1, const QPoint& p2, const QPoint& p) const {
-
+bool Base::Cross(const QPoint& p1, const QPoint& p2, const QPoint& p) const {    
     if (p1.y() > p.y() && p2.y() > p.y()) return false;
     if (p1.y() < p.y() && p2.y() < p.y()) return false;
     if (p1.x() < p.x() && p2.x() < p.x()) return false;
@@ -42,9 +45,12 @@ void Base::Draw(QPainter& painter) const {
 }
 
 bool Base::IsPointInside(const QPoint& point) const {
-    // переделать так, чтобы от точки строился луч вправо, и искались пересечения, среди всех ребер
-    // четное кол-во - находится снаружи
-    // нечетное - внутри
+    // Алгоритм:
+    // От указанной точки проводится горизонтальный луч право
+    // подсчитывается кол-во пересечений с объектом
+    // если intersections % 2 == 1: внутри
+    // иначе: вне объекта
+
 
     size_t intersections = 0;
     for (size_t i = 0; i < points_.size(); i++) {
@@ -59,6 +65,19 @@ bool Base::IsPointInside(const QPoint& point) const {
 
 
 }
+
+void Base::Move(const QPoint& move_offset) {
+    centre_ += move_offset;
+    startPos_ += move_offset;
+    finishPos_ += move_offset;
+
+    for (auto& point: points_) {
+        point += move_offset;
+    }
+
+}
+
+
 
 //================Rectangle================//
 Rectangle::Rectangle(const QPoint& start,
@@ -78,7 +97,6 @@ Rectangle::~Rectangle() {
     qDebug() << "Rectangle deleted";
 }
 
-// public
 
 
 
@@ -93,17 +111,12 @@ Triangle::Triangle(const QPoint& start,
     points_.push_back({startPos_.x(), finishPos_.y()});
     points_.push_back({finishPos_.x(), finishPos_.y()});
     points_.push_back({startPos_.x() + (finishPos_.x() - startPos_.x()) / 2, startPos_.y()});
-
-
-
-
 }
 
 Triangle::~Triangle() {
     qDebug() << "Triangle deleted";
 }
 
-// public
 
 
 
@@ -141,12 +154,6 @@ Ellipse::~Ellipse() {
 float Ellipse::AngleToRadian(float angle) const {
     return 3.141592 * angle / 180;
 }
-
-
-// public
-
-
-
 
 
 } // namespace

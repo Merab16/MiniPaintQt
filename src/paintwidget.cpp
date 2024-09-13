@@ -9,12 +9,13 @@ PaintWidget::PaintWidget(size_t height, QWidget *parent)
     : QWidget{parent}
 {
     setMouseTracking(true);
-    std::string styleSheet =
-        "background-color: red;";
-    setStyleSheet(styleSheet.c_str());
-    setMinimumHeight(height * 0.9);
 
-    //connect(this, &QWidget::)
+    // ??? Стиль не применяется ???
+    // std::string styleSheet =
+    //     "background-color: gray;";
+    // setStyleSheet(styleSheet.c_str());
+
+    setMinimumHeight(height * 0.9);
 
 }
 
@@ -33,26 +34,37 @@ void PaintWidget::mousePressEvent(QMouseEvent* event) {
         isDrawing_ = true;
 
         if (link_)
-            CheckIntersection();
+            StartLink();
+        if (move_)
+            StartMove();
+        if (delete_)
+            StartDelete();
 
         break;
 
     case Qt::RightButton:
         isDrawing_= false;
         CancelLink();
+        CancelMove();
         SetCurrentObject(GEOMETRY_OBJ::NONE);
         break;
     }
-
-    //repaint();
 }
 
 void PaintWidget::mouseReleaseEvent(QMouseEvent* event) {
     switch (event->button()) {
     case Qt::LeftButton:
         if (isDrawing_) {
+            // drawing
             secondPoint_ = QPoint{event->pos()};
             isDrawing_ = false;
+
+            // move
+            move_ = false;
+            start_move_pos_ = {0, 0};
+            current_move_obj_ = nullptr;
+            setCursor(QCursor(Qt::ArrowCursor));
+
             needUpdate_ = true;
             update();
         }
@@ -62,6 +74,13 @@ void PaintWidget::mouseReleaseEvent(QMouseEvent* event) {
 
 void PaintWidget::mouseMoveEvent(QMouseEvent* event)  {
     current_mouse_pos = event->pos();
+
+    if (move_ && current_move_obj_) {
+        QPoint delta = current_mouse_pos - start_move_pos_;
+        current_move_obj_->Move(delta);
+        start_move_pos_ = current_mouse_pos;
+    }
+
     update();
 }
 
@@ -70,51 +89,107 @@ void PaintWidget::DrawNewObject(QPainter& painter) {
     switch(currentObj_) {
     case GEOMETRY_OBJ::RECTANGLE:
         obj = new Rectangle(firstPoint_, secondPoint_);
-        obj->Draw(painter);
-        objects_.push_back(obj);
-
         break;
 
     case GEOMETRY_OBJ::TRIANGLE:
         obj = new Triangle(firstPoint_, secondPoint_);
-        obj->Draw(painter);
-        objects_.push_back(obj);
         break;
 
     case GEOMETRY_OBJ::ELLIPSE:
         obj = new Ellipse(firstPoint_, secondPoint_);
-        obj->Draw(painter);
-        objects_.push_back(obj);
         break;
+    }
+
+    if (currentObj_ != GEOMETRY_OBJ::NONE) {
+        obj->Draw(painter);
+        objects_.emplace(obj);
     }
 
     needUpdate_ = false;
     currentObj_ = GEOMETRY_OBJ::NONE;
 }
 
-void PaintWidget::CheckIntersection() {
-    bool inters = false;
+Base* PaintWidget::CheckIntersection() {
     for (const auto& obj: objects_) {
         if (obj->IsPointInside(firstPoint_)) {
-            if (!potential_link_.sHalf)
-                potential_link_ = Link{&obj->GetCentre(), &current_mouse_pos};
-            else {
-                if (potential_link_.p1 == &obj->GetCentre()) {
-                    CancelLink();
-                    return;
-                }
-                potential_link_.p2 = &obj->GetCentre();
-                links_.push_back(std::move(potential_link_));
-                link_ = false;
-            }
-            inters = true;
+            return obj;
         }
     }
+    return nullptr;
+}
 
+void PaintWidget::StartLink() {
+
+    move_ = false;
+    delete_ = false;
+
+
+    bool inters = false; // Проверка принадлежит ли вторая точка какому-либо объекту
+    auto obj = CheckIntersection();
+    if (!obj) return;
+    if (!potential_link_.sHalf){
+        potential_link_ = Link(&obj->GetCentre(), &current_mouse_pos);
+        potential_link_obj_ = obj;
+    }
+
+    else {
+        if (potential_link_.p1 == &obj->GetCentre()) {
+            CancelLink();
+            return;
+        }
+        potential_link_.p2 = &obj->GetCentre();
+        links_.push_back(std::move(potential_link_));
+        link_ = false;
+    }
+
+    inters = true;
     if (!inters) {
         CancelLink();
     }
 }
+
+void PaintWidget::StartMove() {
+    link_ = false;
+    delete_ = false;
+
+    auto obj = CheckIntersection();
+    if (!obj) return;
+
+    setCursor(QCursor(Qt::ClosedHandCursor));
+    current_move_obj_ = obj;
+    start_move_pos_ = current_mouse_pos;
+
+
+}
+
+void PaintWidget::StartDelete() {
+
+    move_ = false;
+    link_ = false;
+
+    auto obj = CheckIntersection();
+    if (!obj) return;
+
+    DeleteLinks(obj);
+    delete obj;
+    objects_.erase(obj);
+
+    delete_ = false;
+}
+
+void PaintWidget::DeleteLinks(Base* obj) {
+    std::vector<size_t> indexs;
+    for (size_t i = 0; i < links_.size(); ++i) {
+        if (links_[i].p1 == &obj->GetCentre() ||
+            links_[i].p2 == &obj->GetCentre())
+            indexs.push_back(i);
+    }
+
+    for (const auto& index: indexs) {
+        links_.erase(links_.begin() + index);
+    }
+}
+
 
 // public
 void PaintWidget::paintEvent(QPaintEvent *event) {
@@ -135,7 +210,6 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
     }
 
 
-
     // drawing new object
     if (needUpdate_) {
         DrawNewObject(painter);
@@ -143,23 +217,24 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
     painter.end();
 }
 
-void PaintWidget::DeleteObject(const QPoint& point) {
-    size_t i = 0;
-    for (; i < objects_.size(); ++i) {
-        if (objects_[i]->IsPointInside(point)) {
-            break;
-        }
-    }
 
-    objects_.erase(objects_.begin() + i);
-}
 
 // setters
 void PaintWidget::CancelLink() {
+    if (!link_) return;
     qDebug() << "Cancel link";
     link_ = false;
     potential_link_.Reset();
     update();
+}
+
+void PaintWidget::CancelMove() {
+    if (!move_) return;
+    qDebug() << "Cancel move";
+    move_ = false;
+    start_move_pos_ = {0, 0};
+    current_move_obj_ = nullptr;
+    setCursor(QCursor(Qt::ArrowCursor));
 }
 
 
