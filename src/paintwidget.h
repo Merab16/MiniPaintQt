@@ -6,7 +6,6 @@
 #include <QPaintEvent>
 #include <QMouseEvent>
 
-#include <vector>
 #include <set>
 
 
@@ -81,7 +80,6 @@ private:
 
     // bool vars
     bool isDrawing_ = false;
-    bool needUpdate_ = false;
     bool link_ = false;
     bool move_ = false;
     bool delete_ = false;
@@ -98,6 +96,7 @@ private:
 
     // vars of moving obj
     QPoint start_move_pos_;
+    QPoint current_move_pos_;
     GeometricPrimitives::Base* current_move_obj_ = nullptr;
 
 private:
@@ -108,7 +107,7 @@ private:
     void paintEvent(QPaintEvent *event) override;
 
 
-    void DrawNewObject(QPainter& painter);
+    void AddNewObject();
     GeometricPrimitives::Base* CheckIntersection();
 
 
@@ -124,20 +123,19 @@ public:
     void SaveCanvas() const;
     void LoadCanvas();
 
+
     // getters
     QWidget* GetWidget() {return this; }
-    bool GetIsDrawing() const {return isDrawing_; }
 
 
     // setters
-    void CancelDrawing() { isDrawing_= false; }
     void SetCurrentObject(GeometricPrimitives::GEOMETRY_OBJ type)
         { currentObj_ = type; link_ = move_ = delete_ = false; }
-    void LinkObjects() { link_ = true; }
+    void LinkObjects() { isDrawing_ = move_ = delete_ = false; link_ = true; }
     void CancelLink();
-    void MoveObjects() { move_ = true; }
+    void MoveObjects() { isDrawing_ = link_ = delete_ = false; move_ = true; }
     void CancelMove();
-    void DeleteObject() { delete_ = true; }
+    void DeleteObject() { isDrawing_ = link_ = move_ = false; delete_ = true; }
 
 
 signals:

@@ -80,13 +80,17 @@ void PaintWidget::mouseReleaseEvent(QMouseEvent* event) {
             secondPoint_ = QPoint{event->pos()};
             isDrawing_ = false;
 
+
             // move
+
             move_ = false;
-            start_move_pos_ = {0, 0};
+            current_move_pos_ = {0, 0};
             current_move_obj_ = nullptr;
             setCursor(QCursor(Qt::ArrowCursor));
 
-            needUpdate_ = true;
+            if (currentObj_ != GEOMETRY_OBJ::NONE)
+                AddNewObject();
+
             update();
         }
         break;
@@ -97,9 +101,9 @@ void PaintWidget::mouseMoveEvent(QMouseEvent* event)  {
     current_mouse_pos = event->pos();
 
     if (move_ && current_move_obj_) {
-        QPoint delta = current_mouse_pos - start_move_pos_;
+        QPoint delta = current_mouse_pos - current_move_pos_;
         current_move_obj_->Move(delta);
-        start_move_pos_ = current_mouse_pos;
+        current_move_pos_ = current_mouse_pos;
     }
 
     update();
@@ -128,16 +132,11 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
         obj->Draw(painter);
     }
 
-
-    // drawing new object
-    if (needUpdate_) {
-        DrawNewObject(painter);
-    }
     painter.end();
 }
 
 
-void PaintWidget::DrawNewObject(QPainter& painter) {
+void PaintWidget::AddNewObject() {
     Base* obj;
     switch(currentObj_) {
     case GEOMETRY_OBJ::RECTANGLE:
@@ -153,12 +152,7 @@ void PaintWidget::DrawNewObject(QPainter& painter) {
         break;
     }
 
-    if (currentObj_ != GEOMETRY_OBJ::NONE) {
-        obj->Draw(painter);
-        objects_.emplace(obj);
-    }
-
-    needUpdate_ = false;
+    objects_.emplace(obj);
     currentObj_ = GEOMETRY_OBJ::NONE;
 }
 
@@ -173,18 +167,16 @@ Base* PaintWidget::CheckIntersection() {
 
 void PaintWidget::StartLink() {
 
-    move_ = false;
-    delete_ = false;
-
-
     bool inters = false; // Проверка принадлежит ли вторая точка какому-либо объекту
     auto obj = CheckIntersection();
-    if (!obj) return;
+    if (!obj)  {
+        CancelLink();
+        return;
+    }
     if (!potential_link_.sHalf){
         potential_link_ = Link(&obj->GetCentre(), &current_mouse_pos);
         potential_link_obj_ = obj;
     }
-
     else {
         if (potential_link_.p1 == &obj->GetCentre()) {
             CancelLink();
@@ -205,8 +197,6 @@ void PaintWidget::StartLink() {
 }
 
 void PaintWidget::StartMove() {
-    link_ = false;
-    delete_ = false;
 
     auto obj = CheckIntersection();
     if (!obj) return;
@@ -214,14 +204,12 @@ void PaintWidget::StartMove() {
     setCursor(QCursor(Qt::ClosedHandCursor));
     current_move_obj_ = obj;
     start_move_pos_ = current_mouse_pos;
+    current_move_pos_ = current_mouse_pos;
 
 
 }
 
 void PaintWidget::StartDelete() {
-
-    move_ = false;
-    link_ = false;
 
     auto obj = CheckIntersection();
     if (!obj) return;
@@ -347,10 +335,15 @@ void PaintWidget::CancelLink() {
 void PaintWidget::CancelMove() {
     if (!move_) return;
     qDebug() << "Cancel move";
+    qDebug() << start_move_pos_ - current_move_pos_;
+    current_move_obj_->Move(start_move_pos_ - current_move_pos_);
+
     move_ = false;
     start_move_pos_ = {0, 0};
+    current_move_pos_ = {0, 0};
     current_move_obj_ = nullptr;
     setCursor(QCursor(Qt::ArrowCursor));
+    update();
 }
 
 

@@ -99,12 +99,14 @@ void MainWindow::NavigationInitialization() {
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     switch(event->key()) {
     case Qt::Key_Escape:
-        if (paintArea_->GetIsDrawing()) {
-            paintArea_->SetCurrentObject(GEOMETRY_OBJ::NONE);
-            paintArea_->CancelDrawing();
-        }
         paintArea_->CancelLink();
         paintArea_->CancelMove();
+
+        //if (paintArea_->GetIsDrawing()) {
+        //    paintArea_->SetCurrentObject(GEOMETRY_OBJ::NONE);
+            //paintArea_->CancelDrawing();
+        //}
+
 
         break;
     }
