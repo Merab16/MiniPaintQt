@@ -101,13 +101,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     case Qt::Key_Escape:
         paintArea_->CancelLink();
         paintArea_->CancelMove();
-
-        //if (paintArea_->GetIsDrawing()) {
-        //    paintArea_->SetCurrentObject(GEOMETRY_OBJ::NONE);
-            //paintArea_->CancelDrawing();
-        //}
-
-
         break;
     }
 }
